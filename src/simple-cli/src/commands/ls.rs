@@ -1,15 +1,42 @@
 use colored::Colorize;
+use std::fs::DirEntry;
 use std::io::Write;
 
 use super::Command;
 use super::super::utils::ellipsis;
 
-fn colorize(filename: &str) -> String {
-    if filename.starts_with(".") {
-        filename.blue().italic().to_string()
+enum FileType {
+    HiddenFile,
+    File,
+    Directory,
+}
+
+fn get_type(filename: &Result<DirEntry, std::io::Error>) -> FileType {
+    match filename {
+        Err(_) => FileType::File,
+        Ok(filename) => {
+            let filename = filename.file_name().into_string().unwrap();
+            if filename.starts_with(".") {
+                FileType::HiddenFile
+            }
+            else {
+                let metadata = std::fs::metadata(filename).unwrap();
+                if metadata.is_dir() {
+                    FileType::Directory
+                }
+                else {
+                    FileType::File
+                }
+            }
+        }
     }
-    else {
-        filename.to_string()
+}
+
+fn colorize(filename: &str, filetype: &FileType) -> String {
+    match filetype {
+        FileType::HiddenFile => filename.blue().italic().to_string(),
+        FileType::File => filename.to_string(),
+        FileType::Directory => filename.yellow().bold().to_string(),
     }
 }
 
@@ -21,15 +48,32 @@ fn run_ls(_: Vec<&str>) {
     let spacing = 40;
     let max_length: usize = 20;
 
-    let filenames: Vec<String> = entries
-    .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-    .map(|filename| ellipsis(&filename, max_length))
+    let filenames: Vec<(String, FileType)> = entries
+    .filter_map(|entry| {
+        if let Ok(entry) = entry {
+            if let Some(file_name) = entry.file_name().to_str() {
+                Some((ellipsis(&file_name.to_string(), max_length), get_type(&Ok(entry))))
+            }
+            else {
+                None
+            }
+        }
+        else {
+            None
+        }
+    })
     .collect();
+    // .map(|entry| pair_file(&entry))
+    // .map(|(entry, file_type)| {
+    //     let filename = entry.unwrap().file_name().into_string().unwrap();
+    //     (ellipsis(&filename, max_length), file_type)
+    // })
+    // .collect();
 
     std::io::stdout().flush().unwrap();
     for chunk in filenames.chunks(n_cols) {
-        for (_, filename) in chunk.iter().enumerate() {
-            print!("{:<width$}", colorize(filename), width = spacing);
+        for (_, (filename, filetype)) in chunk.iter().enumerate() {
+            print!("{:<width$}", colorize(filename, filetype), width = spacing);
         }
         println!();
     }

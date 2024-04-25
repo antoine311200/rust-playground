@@ -46,7 +46,7 @@ fn main() {
         if input == "help" {
             println!("Available commands:");
             for command in all_commands.iter() {
-                println!("  {} - {}", command.name.green(), command.description);
+                println!("  {} - {}", command.name.yellow().bold(), command.description);
             }
             continue;
         }
