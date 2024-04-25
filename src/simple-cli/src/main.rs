@@ -10,12 +10,12 @@ struct Command {
 }
 
 fn run_echo(args: Vec<&str>) {
-    if args.len() < 2 {
+    if args.len() < 1 {
         println!("echo: missing argument");
         return;
     }
 
-    println!("{}", args[1]);
+    println!("{}", args.join(" "));
 }
 
 fn get_git_branch() -> Option<String> {
@@ -23,8 +23,6 @@ fn get_git_branch() -> Option<String> {
         .arg("branch")
         .output()
         .ok()?;
-
-    println!("{:?}", output.stdout);
 
     let output = String::from_utf8(output.stdout).ok()?;
     let output = output.lines().find(|l| l.starts_with('*'))?;
@@ -49,7 +47,7 @@ fn main() {
 
     loop {
         print!("{}{}{} ", "[".green().bold(), dir_name.green().bold(), "]".green().bold());
-        print!("{} ", get_git_branch().unwrap_or("".to_string()).purple().italic());
+        print!("{}{}{} ", "(".purple(), get_git_branch().unwrap_or("".to_string()).purple().italic(), ")".purple());
         std::io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -67,7 +65,7 @@ fn main() {
         if input == "help" {
             println!("Available commands:");
             for command in all_commands.iter() {
-                println!("{} - {}", command.name.green(), command.description);
+                println!("  {} - {}", command.name.green(), command.description);
             }
             continue;
         }
