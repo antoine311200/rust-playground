@@ -9,6 +9,16 @@ struct Command {
     pub run: fn(Vec<&str>),
 }
 
+impl Command {
+    fn new(name: &str, description: &str, run: fn(Vec<&str>)) -> Command {
+        Command {
+            name: name.to_string(),
+            description: description.to_string(),
+            run,
+        }
+    }
+}
+
 fn run_echo(args: Vec<&str>) {
     if args.len() < 1 {
         println!("echo: missing argument");
@@ -16,6 +26,20 @@ fn run_echo(args: Vec<&str>) {
     }
 
     println!("{}", args.join(" "));
+}
+
+fn run_ls(_: Vec<&str>) {
+    let current_dir = std::env::current_dir().unwrap();
+    let entries = std::fs::read_dir(current_dir).unwrap();
+
+    let filenames: Vec<String> = entries
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+
+    for filename in filenames {
+        println!("  {}", if filename.starts_with(".") { filename.blue().italic() } else { filename.normal() });
+
+    }
 }
 
 fn get_git_branch() -> Option<String> {
@@ -31,12 +55,10 @@ fn get_git_branch() -> Option<String> {
 }
 
 fn main() {
-    let all_commands: [Command; 1] = [
-        Command {
-            name: "echo".to_string(),
-            description: "Prints the given text".to_string(),
-            run: run_echo,
-        },
+    let all_commands: [Command; 3] = [
+        Command::new("echo", "Prints the arguments", run_echo),
+        Command::new("exit", "Exits the application", |_: Vec<&str>| {}),
+        Command::new("ls", "Lists the files in the current directory", run_ls)
     ];
 
     println!("Welcome to the {} {} application", "Simple".cyan().italic(), "CLI".bold().purple());
@@ -59,6 +81,7 @@ fn main() {
         }
 
         if input == "exit" {
+            println!("{} See you soon!", "Goodbye!".yellow().bold().italic());
             break;
         }
 
