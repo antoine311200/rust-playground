@@ -63,12 +63,6 @@ fn run_ls(_: Vec<&str>) {
         }
     })
     .collect();
-    // .map(|entry| pair_file(&entry))
-    // .map(|(entry, file_type)| {
-    //     let filename = entry.unwrap().file_name().into_string().unwrap();
-    //     (ellipsis(&filename, max_length), file_type)
-    // })
-    // .collect();
 
     std::io::stdout().flush().unwrap();
     for chunk in filenames.chunks(n_cols) {
